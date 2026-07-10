@@ -1,0 +1,4 @@
+
+# Diarization ONNX models (large, downloaded)
+diar-models/
+*.onnx
