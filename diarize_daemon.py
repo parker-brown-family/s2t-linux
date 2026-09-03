@@ -25,7 +25,7 @@ PORT = 7980
 HERE = "/home/pbrown/s2t/diar-models"
 SEG = f"{HERE}/sherpa-onnx-pyannote-segmentation-3-0/model.onnx"
 EMB = os.environ.get("DIAR_EMB", f"{HERE}/titanet.onnx")
-WHISPER_MODEL = os.environ.get("DIAR_WHISPER", "tiny")
+WHISPER_MODEL = os.environ.get("DIAR_WHISPER", "small.en")
 THRESHOLD = float(os.environ.get("DIAR_THRESHOLD", "0.5"))
 
 whisper = None
@@ -66,11 +66,11 @@ def speaker_for(start, end, turns):
     return best
 
 
-def diarize_transcribe(path, num_speakers):
+def diarize_transcribe(path, num_speakers, initial_prompt=None):
     audio = read_wav_mono_f32(path)
     sd = make_diarizer(num_speakers)  # cheap to build; models are cached by sherpa
     turns = [(t.start, t.end, t.speaker) for t in sd.process(audio).sort_by_start_time()]
-    segments, _ = whisper.transcribe(path, language="en", condition_on_previous_text=False)
+    segments, _ = whisper.transcribe(path, language="en", condition_on_previous_text=False, initial_prompt=initial_prompt)
     out = [
         {
             "speaker": int(speaker_for(s.start, s.end, turns)),
@@ -101,7 +101,7 @@ class Handler(BaseHTTPRequestHandler):
             self._respond(400, {"error": f"file not found: {path}"})
             return
         try:
-            self._respond(200, diarize_transcribe(path, int(body.get("num_speakers", -1))))
+            self._respond(200, diarize_transcribe(path, int(body.get("num_speakers", -1)), (body.get("initial_prompt") or "").strip() or None))
         except Exception as e:  # noqa: BLE001
             self._respond(500, {"error": str(e)})
 

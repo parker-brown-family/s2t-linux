@@ -1,4 +1,11 @@
-
 # Diarization ONNX models (large, downloaded)
 diar-models/
 *.onnx
+
+# Runtime scratch: the daemon writes the in-flight recording and its pid here,
+# so the directory is always dirty while anything is listening.
+tmp/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
